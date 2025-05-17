@@ -1,0 +1,31 @@
+#Problemática 
+En Santiago de Cuba la producción azucarera enfrenta graves dificultades. El central Dos Ríos solo había logrado un 13% de su plan de producción (unas 3,000 toneladas de las 20,811 previstas) tras 73 días de operaciones . Esta situación se repite en toda la provincia, afectando la economía local y nacional.
+
+import torch
+import torch.nn as nn
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+
+class AgriculturalOptimizer(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.weather_net = nn.Sequential(
+            nn.Linear(5, 16),  
+            nn.ReLU()
+        )
+        self.equipment_net = nn.Sequential(
+            nn.Linear(3, 16),
+            nn.ReLU()
+        )
+        self.lstm = nn.LSTM(input_size=4, hidden_size=16, num_layers=2)  # datos temporales
+        self.combine = nn.Linear(16*3, 32)
+        self.output = nn.Linear(32, 3)  # predicción: rendimiento, tiempo óptimo cosecha, riesgo fallo
+
+    def forward(self, weather, equipment, temporal):
+        weather_out = self.weather_net(weather)
+        equipment_out = self.equipment_net(equipment)
+        temporal_out, _ = self.lstm(temporal)
+        temporal_out = temporal_out[-1]
+        combined = torch.cat([weather_out, equipment_out, temporal_out], dim=1)
+        out = self.combine(combined)
+        return self.output(out)
